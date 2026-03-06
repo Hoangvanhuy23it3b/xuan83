@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8/3 Cho Vợ Xuân - My Queen</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@300;600&family=Pacifico&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pink-dark: #ff2d55;
+            --pink-light: #ffbaba;
+            --glass: rgba(255, 255, 255, 0.3);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            background: radial-gradient(circle at center, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            min-height: 100vh; font-family: 'Montserrat', sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            overflow-y: auto; overflow-x: hidden; padding: 20px 0;
+        }
+
+        /* Nút Phát Nhạc Nền */
+        .music-btn {
+            position: fixed; bottom: 20px; right: 20px; z-index: 1000;
+            width: 50px; height: 50px; border-radius: 50%;
+            background: var(--pink-dark); color: white; border: none;
+            font-size: 24px; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(255,45,85,0.5);
+            animation: spin 4s linear infinite; transition: 0.3s;
+        }
+        .music-btn.paused { animation: none; background: #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Hoa rơi */
+        .flower {
+            position: fixed; top: -10%; z-index: 1;
+            pointer-events: none; animation: float linear infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg) translateX(0); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg) translateX(50px); opacity: 0; }
+        }
+
+        /* Card Chính */
+        .card {
+            width: 90%; max-width: 450px; padding: 30px;
+            background: var(--glass);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 30px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.1);
+            text-align: center; z-index: 10; margin-bottom: 20px;
+        }
+
+        h1 { font-family: 'Pacifico', cursive; color: var(--pink-dark); font-size: 2rem; margin-bottom: 5px; }
+
+        /* Lá thư */
+        .envelope-wrapper { margin: 20px 0; cursor: pointer; transition: 0.3s; }
+        .envelope-wrapper:hover { transform: scale(1.1); }
+        .envelope-icon { font-size: 60px; filter: drop-shadow(0 5px 10px rgba(255,45,85,0.3)); }
+
+        /* Modals (Cửa sổ nổi) */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+            display: none; z-index: 2000; justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        
+        .modal-content {
+            background: #fff9f9; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px;
+            box-shadow: 0 0 30px var(--pink-light); text-align: left;
+            max-height: 90vh; overflow-y: auto;
+        }
+
+        /* CSS cho thư */
+        .letter-text { font-family: 'Dancing Script', cursive; font-size: 1.4rem; color: #444; line-height: 1.6; }
+        #typewriterText { white-space: pre-wrap; word-break: break-word; text-align: justify; min-height: 150px; }
+
+        /* CSS cho Bài Quiz Dạng Chọn Đáp Án */
+        .quiz-title { font-size: 1.2rem; color: var(--pink-dark); text-align: center; margin-bottom: 15px; font-weight: 600; }
+        .quiz-group { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed var(--pink-light); }
+        .quiz-group:last-child { border-bottom: none; }
+        
+        .quiz-options { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .quiz-option { display: flex; align-items: center; padding: 12px 15px; background: rgba(255, 186, 186, 0.15); border: 2px solid transparent; border-radius: 12px; cursor: pointer; transition: 0.2s; font-size: 0.95rem; }
+        .quiz-option:hover { background: rgba(255, 186, 186, 0.4); }
+        .quiz-option input[type="radio"] { display: none; }
+        .quiz-option.selected { border-color: var(--pink-dark); background: rgba(255, 45, 85, 0.1); font-weight: bold; color: var(--pink-dark); box-shadow: 0 4px 10px rgba(255,45,85,0.15); }
+        .error-msg { color: #ff2d55; font-size: 0.85rem; display: none; margin-top: 8px; font-weight: 600; }
+
+        /* Nút bấm chung */
+        .btn-primary { background: linear-gradient(45deg, #ff2d55, #ff5e7e); color: white; border: none; padding: 15px; border-radius: 50px; font-weight: 600; cursor: pointer; width: 100%; box-shadow: 0 10px 20px rgba(255,45,85,0.3); transition: 0.3s; margin-top: 10px;}
+        .btn-sms { background: linear-gradient(45deg, #4CAF50, #81C784); color: white; border: none; padding: 15px; border-radius: 50px; font-weight: 600; cursor: pointer; width: 100%; box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3); transition: 0.3s; margin-top: 10px;}
+
+        /* Album & Wish */
+        .album-preview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+        .album-item { position: relative; aspect-ratio: 1/1; border-radius: 12px; overflow: hidden; border: 2px solid white; cursor: pointer; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .album-item img { width: 100%; height: 100%; object-fit: cover; }
+        .more-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); color: white; font-size: 1.5rem; font-weight: bold; display: flex; justify-content: center; align-items: center; }
+        .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; z-index: 3000; justify-content: center; align-items: center; }
+        .lightbox.active { display: flex; }
+        .lightbox img { max-width: 95%; max-height: 80%; border-radius: 10px; }
+        .close-lightbox { position: absolute; top: 30px; right: 30px; color: white; font-size: 40px; cursor: pointer; }
+        .nav-btn { position: absolute; color: white; font-size: 50px; background: none; border: none; cursor: pointer; padding: 20px; }
+        .prev { left: 10px; } .next { right: 10px; }
+        .wish-section { margin-top: 25px; padding: 15px; background: rgba(255,255,255,0.4); border-radius: 20px; }
+        textarea { width: 100%; height: 80px; border: none; padding: 10px; border-radius: 10px; outline: none; background: rgba(255,255,255,0.8); margin-top: 10px; font-family: inherit; resize: none; }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" loop>
+        <source src="music/noinaycoanh.mp3" type="audio/mpeg">
+    </audio>
+
+    <button id="musicToggle" class="music-btn paused" onclick="toggleMusic()">🎵</button>
+
+    <div id="flower-container"></div>
+
+    <div class="card">
+        <h1>Vợ Xuân Của Anh ❤️</h1>
+        <p style="color: #666; font-size: 0.9rem;">Chúc mừng ngày Quốc tế Phụ nữ!</p>
+
+        <div class="envelope-wrapper" onclick="openQuiz()">
+            <div class="envelope-icon">✉️</div>
+            <p style="font-size: 0.8rem; color: var(--pink-dark); font-weight: bold;">Chồng có bức thư tay cho vợ...</p>
+        </div>
+
+        <div id="albumGrid" class="album-preview"></div>
+
+        <div class="wish-section">
+            <p style="font-weight: 600; color: var(--pink-dark);">Vợ ước điều gì cho hôm nay?</p>
+            <textarea id="wishInput" placeholder="Nhập mong muốn của vợ vào đây nhé..."></textarea>
+            
+            <button class="btn-primary" onclick="sendWishZalo()">Gửi qua Zalo 💙</button>
+            
+            <button class="btn-sms" onclick="sendWishSMS()">Gửi qua SMS 💬 (Nhanh)</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="quizModal">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2 class="quiz-title">Trả lời đúng 5 câu này mới được đọc thư nha! 🥰</h2>
+            <div id="quizContainer"></div>
+            <button class="btn-primary" onclick="checkQuiz()">Xác nhận & Mở thư 🔓</button>
+            <button onclick="closeQuiz()" style="width:100%; margin-top:10px; border:none; background:#ccc; color:#333; padding:15px; border-radius:50px; font-weight: 600; cursor: pointer;">Để sau</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="letterModal">
+        <div class="modal-content letter-text" onclick="event.stopPropagation()">
+            <div id="typewriterText"></div>
+            <button id="btnFinishRead" onclick="openMoneyModal()" style="display:none; width:100%; margin-top:20px; border:none; background:var(--pink-dark); color:white; padding:15px; border-radius:50px; font-family:'Montserrat'; font-weight:bold; cursor:pointer;">Đã đọc xong</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="moneyModal">
+        <div class="modal-content" style="text-align: center; font-family: 'Montserrat', sans-serif; overflow: visible;" onclick="event.stopPropagation()">
+            <h2 style="color: var(--pink-dark); margin-bottom: 10px;">Hỏi nhỏ câu này nha...</h2>
+            <p style="font-size: 1.1rem; margin-bottom: 30px; font-weight: bold;">Tiền của vợ là của chồng nhé? 😜</p>
+            <div style="display: flex; justify-content: space-around; align-items: center; min-height: 120px; position: relative;">
+                <button id="btnYes" class="btn-primary" style="width: 45%; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 10;" onclick="acceptMoney()">Có</button>
+                <button id="btnNo" style="width: 45%; padding: 15px; border-radius: 50px; border: none; background: #ddd; font-weight: bold; cursor: pointer; transition: 0.2s;" onclick="growYes()">Không</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="lightbox" id="lightbox">
+        <span class="close-lightbox" onclick="closeLightbox()">&times;</span>
+        <button class="nav-btn prev" onclick="changeImg(-1)">❮</button>
+        <img id="lightboxImg" src="">
+        <button class="nav-btn next" onclick="changeImg(1)">❯</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <script>
+        // --- SỐ ĐIỆN THOẠI CỦA BẠN ĐÃ ĐƯỢC CHÈN VÀO ĐÂY ---
+        const MY_PHONE_NUMBER = "0799083513";
+        
+        const totalImages = 23;
+        const fullImages = [];
+        let globalZaloMessage = ""; 
+
+        for (let i = 1; i <= totalImages; i++) { fullImages.push(`images/anh${i}.jpg`); }
+
+        const noiDungThu = "Gửi Vợ Xuân yêu dấu của anh! ❤️\n\nNhân ngày mùng 8/3, anh muốn gửi đến người phụ nữ tuyệt vời nhất cuộc đời anh những lời từ tận đáy lòng.\n\nThời gian trôi qua thật nhanh từ cái ngày đầu tiên mình bước vào đời nhau. Cảm ơn em, người bạn đồng hành kiên nhẫn và bao dung, đã luôn ở bên cạnh chăm lo cho anh và vun vén cho gia đình nhỏ của chúng ta. Cảm ơn em vì những hy sinh thầm lặng, vì những bữa cơm ấm áp và vì cả những lúc em hay cằn nhằn nhưng ngập tràn sự quan tâm.\n\nTrong mắt anh, vợ lúc nào cũng xinh đẹp, rạng rỡ và đáng yêu y như ngày đầu mình mới hẹn hò. Dù ngoài kia công việc có áp lực hay mệt mỏi đến đâu, chỉ cần về nhà nhìn thấy nụ cười của em là anh thấy bình yên đến lạ.\n\nNgày của em, anh chúc vợ yêu luôn vui vẻ, hạnh phúc và giữ mãi nụ cười rạng rỡ trên môi. Cứ thoải mái đi mua sắm, làm đẹp và tận hưởng nhé, vì nụ cười của em chính là ưu tiên số một của anh. Anh hứa sẽ luôn cố gắng và nỗ lực hơn nữa để làm chỗ dựa vững chắc cho em và gia đình mình.\n\nChúc My Queen của anh một ngày 8/3 thật trọn vẹn và đáng nhớ. Anh yêu vợ rất rất nhiều! Mãi nắm chặt tay nhau đi hết quãng đường này vợ nhé! 🥰";
+
+      const questions = [
+            { id: "q1", question: "1. Ngày mình chính thức yêu nhau là ngày nào?", options: ["27/02", "27/12", "3/1", "24/12"], answer: "27/12" },
+            { id: "q2", question: "2. Chồng hay gọi vợ bằng biệt danh gì?", options: ["chục chích chúi", "Cục cưng", "Em bé", "Sư tử hà đông"], answer: "chục chích chúi" },
+            { id: "q3", question: "3. Nơi hẹn hò đầu tiên của hai đứa ở đâu?", options: ["Quán Trà Sữa", "Quán khoai nướng", "Quán Cà Phê", "Công Viên"], answer: "Quán khoai nướng" },
+            { id: "q4", question: "4. Ngày mình ụt ịt là ngày nào?", options: ["1/3", "1/2", "3/1", "không biết"], answer: "3/1" },
+            { id: "q5", question: "5. ngày mà vợ nhắn tin ngoại tình với bá thiện là ngày nào? 😌", options: ["7/1", "nhiều ngày", "14/1", "24/12"], answer: "7/1" }
+        ];
+
+        // Quản lý Nhạc
+        const bgMusic = document.getElementById('bgMusic');
+        const musicToggle = document.getElementById('musicToggle');
+        let isMusicPlaying = false;
+        function toggleMusic() {
+            if (isMusicPlaying) { bgMusic.pause(); musicToggle.classList.add('paused'); }
+            else { bgMusic.play(); musicToggle.classList.remove('paused'); }
+            isMusicPlaying = !isMusicPlaying;
+        }
+        document.body.addEventListener('click', function() {
+            if (!isMusicPlaying) {
+                bgMusic.play().then(() => { isMusicPlaying = true; musicToggle.classList.remove('paused'); }).catch(e => {});
+            }
+        }, { once: true });
+
+        // Tạo âm thanh
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        function initAudio() { if(!audioCtx) audioCtx = new AudioContext(); if(audioCtx.state === 'suspended') audioCtx.resume(); }
+        function playSound(type) {
+            initAudio(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            if (type === 'ting') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
+                gain.gain.setValueAtTime(1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, audioCtx.currentTime); 
+                gain.gain.setValueAtTime(0.5, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            }
+        }
+
+        // Setup Quiz
+        const quizContainer = document.getElementById('quizContainer');
+        questions.forEach((q, index) => {
+            let shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
+            let optionsHtml = shuffledOptions.map((opt, optIdx) => `
+                <label class="quiz-option" id="label-${q.id}-${optIdx}">
+                    <input type="radio" name="${q.id}" value="${opt}" onchange="selectOption('${q.id}', 'label-${q.id}-${optIdx}')">
+                    ${opt}
+                </label>
+            `).join('');
+            quizContainer.innerHTML += `<div class="quiz-group"><p style="font-weight: 600; margin-bottom: 5px; color: #333;">${q.question}</p><div class="quiz-options">${optionsHtml}</div><div class="error-msg" id="err-${q.id}">Vợ chưa chọn hoặc chọn sai rồi nè! 😝</div></div>`;
+        });
+
+        function selectOption(qId, labelId) {
+            document.querySelectorAll(`input[name="${qId}"]`).forEach(input => input.parentElement.classList.remove('selected'));
+            document.getElementById(labelId).classList.add('selected'); initAudio(); 
+        }
+
+        function openQuiz() { document.getElementById('quizModal').classList.add('active'); }
+        function closeQuiz() { document.getElementById('quizModal').classList.remove('active'); }
+
+        function checkQuiz() {
+            let allCorrect = true; let userAnswers = [];
+            questions.forEach(q => {
+                const selectedInput = document.querySelector(`input[name="${q.id}"]:checked`);
+                const errorMsg = document.getElementById(`err-${q.id}`);
+                if (selectedInput && selectedInput.value === q.answer) {
+                    errorMsg.style.display = 'none'; userAnswers.push(selectedInput.value);
+                } else { errorMsg.style.display = 'block'; allCorrect = false; }
+            });
+            if (allCorrect) {
+                playSound('ting'); closeQuiz(); triggerLetterOpen();
+                globalZaloMessage = "Chồng ơi, vợ đã pass 5 câu hỏi dễ ợt nha! ❤️\n";
+                userAnswers.forEach((ans, idx) => { globalZaloMessage += `Câu ${idx + 1}: ${ans}\n`; });
+            } else { playSound('bip'); }
+        }
+
+        function triggerLetterOpen() {
+            document.getElementById('letterModal').classList.add('active');
+            const target = document.getElementById('typewriterText');
+            document.getElementById('btnFinishRead').style.display = 'none'; target.innerText = "";
+            let i = 0;
+            function type() {
+                if(i < noiDungThu.length) { target.innerText += noiDungThu.charAt(i); i++; setTimeout(type, 40); } 
+                else { document.getElementById('btnFinishRead').style.display = 'block'; }
+            }
+            type(); confetti({ particleCount: 100, spread: 70 });
+        }
+
+        let yesScale = 1;
+        function openMoneyModal() { document.getElementById('moneyModal').classList.add('active'); }
+        function growYes() {
+            playSound('bip'); yesScale += 0.4;
+            document.getElementById('btnYes').style.transform = `scale(${yesScale})`;
+            const noTexts = ["Nghĩ kỹ lại đi!", "Bấm nhầm à?", "Chắc chưa?", "Không được đâu!", "Hư quá nha!", "Phải chọn Có!"];
+            document.getElementById('btnNo').innerText = noTexts[Math.floor(Math.random() * noTexts.length)];
+        }
+
+        function acceptMoney() {
+            playSound('ting'); confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+            globalZaloMessage += "\n--------------------\nĐẶC BIỆT: VỢ ĐÃ ĐỒNG Ý TIỀN CỦA VỢ LÀ CỦA CHỒNG RỒI NHA! Bút sa gà chết 😜💸";
+            alert("Yêu vợ nhất! ❤️\n\nHaha chồng biết ngay vợ sẽ đồng ý mà!\n(Do Zalo không tự điền chữ được, hệ thống đã tự động copy, vợ chỉ cần nhấn DÁN vào Zalo để chốt kèo nhé!) 😆");
+            
+            document.getElementById('moneyModal').classList.remove('active');
+            document.getElementById('letterModal').classList.remove('active');
+            
+            navigator.clipboard.writeText(globalZaloMessage).then(() => {
+                window.location.href = `https://zalo.me/${MY_PHONE_NUMBER}`;
+            }).catch(err => { window.location.href = `https://zalo.me/${MY_PHONE_NUMBER}`; });
+        }
+
+        // ==========================================
+        // GỬI ĐIỀU ƯỚC (2 TÙY CHỌN MỚI)
+        // ==========================================
+        function sendWishZalo() {
+            const wish = document.getElementById('wishInput').value;
+            if(!wish.trim()) return alert("Vợ chưa nhập điều ước mà! ❤️");
+            confetti({ particleCount: 100, spread: 70 });
+            const message = `Chào Chồng yêu! Em là Xuân đây. 8/3 này em mong muốn: ${wish}`;
+            
+            // Báo cho vợ biết cần phải Paste/Dán
+            alert("Hệ thống đã tự động sao chép (Copy) lời chúc của vợ!\n\nVợ nhấn OK, sau đó vào khung chat Zalo ấn 'Dán' (Paste) để gửi cho chồng nhé! ❤️");
+            
+            navigator.clipboard.writeText(message).then(() => {
+                window.location.href = `https://zalo.me/${MY_PHONE_NUMBER}`;
+            });
+        }
+
+        function sendWishSMS() {
+            const wish = document.getElementById('wishInput').value;
+            if(!wish.trim()) return alert("Vợ chưa nhập điều ước mà! ❤️");
+            confetti({ particleCount: 100, spread: 70 });
+            const message = `Chào Chồng yêu! Em là Xuân đây. 8/3 này em mong muốn: ${wish}`;
+            
+            // SMS thì điền tự động 100% được, dùng cú pháp chuẩn sms:số_điện_thoại?body=nội_dung
+            const encodedMessage = encodeURIComponent(message);
+            window.location.href = `sms:${MY_PHONE_NUMBER}?body=${encodedMessage}`;
+        }
+
+        // Album & Hoa
+        function khoiTao() {
+            const grid = document.getElementById('albumGrid');
+            const maxDisplay = 6; 
+            for (let idx = 0; idx < fullImages.length; idx++) {
+                if (idx >= maxDisplay) break;
+                const div = document.createElement('div'); div.className = 'album-item';
+                let innerHTML = `<img src="${fullImages[idx]}" onclick="openLightbox(${idx})" onerror="this.src='https://via.placeholder.com/150?text=Anh+${idx+1}'">`;
+                if (idx === maxDisplay - 1 && fullImages.length > maxDisplay) {
+                    innerHTML += `<div class="more-overlay" onclick="openLightbox(${idx})">+${fullImages.length - maxDisplay}</div>`;
+                }
+                div.innerHTML = innerHTML; grid.appendChild(div);
+            }
+        }
+        window.onload = khoiTao;
+
+        setInterval(() => {
+            const f = document.createElement('div'); f.className = 'flower';
+            f.innerText = ['🌸', '🌺', '🌹', '💖'][Math.floor(Math.random()*4)];
+            f.style.left = Math.random() * 100 + 'vw'; f.style.fontSize = Math.random() * 20 + 15 + 'px';
+            f.style.animationDuration = Math.random() * 3 + 4 + 's';
+            document.getElementById('flower-container').appendChild(f);
+            setTimeout(() => f.remove(), 6000);
+        }, 400);
+
+        let currentIdx = 0;
+        function openLightbox(idx) { currentIdx = idx; document.getElementById('lightboxImg').src = fullImages[currentIdx]; document.getElementById('lightbox').classList.add('active'); }
+        function closeLightbox() { document.getElementById('lightbox').classList.remove('active'); }
+        function changeImg(s) { currentIdx = (currentIdx + s + totalImages) % totalImages; document.getElementById('lightboxImg').src = fullImages[currentIdx]; }
+    </script>
+</body>
+</html>
